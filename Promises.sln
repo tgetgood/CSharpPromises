@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Promises", "Promises\Promises.csproj", "{451145C2-F6B9-49CD-9DA5-7C8E2F9247EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{63CA6B2C-B57F-4BB4-9EFB-B36527804313}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{451145C2-F6B9-49CD-9DA5-7C8E2F9247EF}.Debug|x86.ActiveCfg = Debug|x86
+		{451145C2-F6B9-49CD-9DA5-7C8E2F9247EF}.Debug|x86.Build.0 = Debug|x86
+		{451145C2-F6B9-49CD-9DA5-7C8E2F9247EF}.Release|x86.ActiveCfg = Release|x86
+		{451145C2-F6B9-49CD-9DA5-7C8E2F9247EF}.Release|x86.Build.0 = Release|x86
+		{63CA6B2C-B57F-4BB4-9EFB-B36527804313}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{63CA6B2C-B57F-4BB4-9EFB-B36527804313}.Debug|x86.Build.0 = Debug|Any CPU
+		{63CA6B2C-B57F-4BB4-9EFB-B36527804313}.Release|x86.ActiveCfg = Release|Any CPU
+		{63CA6B2C-B57F-4BB4-9EFB-B36527804313}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Examples\Examples.csproj
+	EndGlobalSection
+EndGlobal
