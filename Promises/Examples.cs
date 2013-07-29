@@ -11,7 +11,7 @@ namespace Examples
 		public static void Main(string[] args)
 		{
 			Promise<string> hello = CreateSimplePromise();
-			hello.success(mesg => Console.WriteLine(mesg));
+			hello.Success(mesg => Console.WriteLine(mesg));
 		}
 
 		/// <summary>

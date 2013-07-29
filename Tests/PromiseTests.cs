@@ -11,8 +11,8 @@ namespace Promise
 		{
 			Promise<int> p1 = new Promise<int>(cb => cb(null, 5));
 			bool test = false;
-			p1.success(s => test = true);
-			p1.success(s => Assert.AreEqual(s, 5));
+			p1.Success(s => test = true);
+			p1.Success(s => Assert.AreEqual(s, 5));
 			Assert.IsTrue(test);
 		}
 
@@ -26,13 +26,13 @@ namespace Promise
 
 			bool test = false;
 
-			combo.success(p =>
+			combo.Success(p =>
 			{
-				Assert.AreEqual(p.first, 5);
-				Assert.AreEqual(p.second, "some string");
+				Assert.AreEqual(p.First, 5);
+				Assert.AreEqual(p.Second, "some string");
 			});
 
-			combo.success(s => test = true);
+			combo.Success(s => test = true);
 
 			Assert.IsTrue(test);
 		}
@@ -43,11 +43,11 @@ namespace Promise
 			Promise<int> p1 = new Promise<int>(cb => cb(null, 5));
 			Promise<string> p2 = p1.map(x => x.ToString());
 
-			p2.success(s => Assert.AreEqual(s, "5"));
+			p2.Success(s => Assert.AreEqual(s, "5"));
 
 			bool test = false;
 
-			p2.success(s => test = true);
+			p2.Success(s => test = true);
 
 			Assert.IsTrue(test);
 		}
@@ -57,16 +57,16 @@ namespace Promise
 		{
 			Promise<Promise<string>> p = new Promise<Promise<string>>(cb => cb(null, new Promise<string>(cb2 => cb2(null, "gotcha"))));
 
-			p.success(s => Assert.AreNotEqual(s, "gotcha"));
-			p.success(s => s.success(y => Assert.AreEqual(y, "gotcha")));
+			p.Success(s => Assert.AreNotEqual(s, "gotcha"));
+			p.Success(s => s.Success(y => Assert.AreEqual(y, "gotcha")));
 
-			var p2 = Promise.join(p);
+			var p2 = Promise.Join(p);
 
-			p2.success(s => Assert.AreEqual(s, "gotcha"));
+			p2.Success(s => Assert.AreEqual(s, "gotcha"));
 
 			bool test = false;
 
-			p2.success(x => test = true);
+			p2.Success(x => test = true);
 
 			Assert.IsTrue(test);
 		}
@@ -77,11 +77,11 @@ namespace Promise
 			Promise<int> p1 = new Promise<int>(cb => cb(null, 5));
 			Promise<string> p2 = p1.flatMap(i => new Promise<string>(cb => cb(null, i.ToString())));
 
-			p2.success(s => Assert.AreEqual(s, "5"));
+			p2.Success(s => Assert.AreEqual(s, "5"));
 
 			bool test = false;
 
-			p2.success(x => test = true);
+			p2.Success(x => test = true);
 
 			Assert.IsTrue(test);
 		}
@@ -93,11 +93,11 @@ namespace Promise
 
 			Promise<string> full = suf.flatMap(x => convert("first", x));
 
-			full.success(x => Assert.AreEqual(x, "first, second"));
+			full.Success(x => Assert.AreEqual(x, "first, second"));
 
 			bool test = false;
 
-			full.success(x => test = true);
+			full.Success(x => test = true);
 
 			Assert.IsTrue(test);
 		}
@@ -114,11 +114,11 @@ namespace Promise
 
 			bool test = false;
 
-			p.success(x => test = true);
+			p.Success(x => test = true);
 
 			Assert.IsFalse(test);
 
-			p.fail(s => test = true);
+			p.Fail(s => test = true);
 
 			Assert.IsTrue(test);
 
@@ -126,11 +126,11 @@ namespace Promise
 
 			test = false;
 
-			p2.success(x => test = true);
+			p2.Success(x => test = true);
 
 			Assert.IsFalse(test);
 
-			p2.fail(s => test = true);
+			p2.Fail(s => test = true);
 
 			Assert.IsTrue(test);
 		}

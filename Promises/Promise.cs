@@ -8,22 +8,22 @@ namespace Promise
 		/// <summary>
 		/// Takes a promise of a promise and returns the promised promise.
 		/// </summary>
-		public static Promise<S> join<S>(Promise<Promise<S>> upper)
+		public static Promise<S> Join<S>(Promise<Promise<S>> upper)
 		{
 			Action<Action<PromiseError, S>> wrap = cb =>
 			{
-				upper.success((Promise<S> lower) =>
+				upper.Success((Promise<S> lower) =>
 				{
-					lower.success((S t) =>
+					lower.Success((S t) =>
 					{
 						cb(null, t);
 					});
-					lower.fail(s =>
+					lower.Fail(s =>
 					{
 						cb(s, default(S));
 					});
 				});
-				upper.fail(s =>
+				upper.Fail(s =>
 				{
 					cb(s, default(S));
 				});
@@ -33,8 +33,8 @@ namespace Promise
 		/// <summary>
 		/// Converts a list of promises into a promise of a list.
 		/// </summary>
-		public static Promise<List<S>> invert<S>(List<Promise<S>> promises, bool dropFailures = false)
-		// I can't remember the proper name for this kind of functor... If you do please rename. 
+		/// <remarks>I can't remember the proper name for this kind of functor... If you do please rename.</remarks>
+		public static Promise<List<S>> Invert<S>(List<Promise<S>> promises, bool dropFailures = false)
 		{
 			Action<Action<PromiseError, List<S>>> wrap = cb =>
 			{
@@ -55,7 +55,7 @@ namespace Promise
 
 				promises.ForEach(p =>
 				{
-					p.success(val =>
+					p.Success(val =>
 					{
 						lock (locker)
 						{
@@ -63,7 +63,7 @@ namespace Promise
 							checkDone();
 						}
 					});
-					p.fail(e =>
+					p.Fail(e =>
 					{
 						lock (locker)
 						{
@@ -110,11 +110,11 @@ namespace Promise
 
 			try
 			{
-				cb(construct);
+				cb(Construct);
 			}
 			catch (Exception e)
 			{
-				construct(e, default(T));
+				Construct(e, default(T));
 			}
 		}
 
@@ -137,7 +137,7 @@ namespace Promise
 
 		#region promise logic
 
-		public void success(Action<T> cb)
+		public void Success(Action<T> cb)
 		{
 			lock (mutex)
 			{
@@ -151,7 +151,7 @@ namespace Promise
 			}
 		}
 
-		public void fail(Action<PromiseError> cb)
+		public void Fail(Action<PromiseError> cb)
 		{
 			lock (mutex)
 			{
@@ -165,7 +165,7 @@ namespace Promise
 			}
 		}
 
-		private void construct(PromiseError err, T val)
+		private void Construct(PromiseError err, T val)
 		{
 			if (_completed)
 				return;
@@ -175,22 +175,22 @@ namespace Promise
 			if (err != null)
 			{
 				_err = err;
-				triggerFailure();
+				TriggerFailure();
 			}
 			else
 			{
 				_val = val;
-				triggerSuccess();
+				TriggerSuccess();
 			}
 		}
 
-		private void triggerFailure()
+		private void TriggerFailure()
 		{
 			lock (mutex)
 			{
 				_succeeded = false;
 				_onFail.ForEach(x => x(_err));
-				clean();
+				Clean();
 			}
 		}
 
@@ -198,20 +198,20 @@ namespace Promise
 		/// Calls success callbacks
 		/// N.B.: The order in which success callbacks are called should be assumed indeterminate.
 		/// </summary>
-		private void triggerSuccess()
+		private void TriggerSuccess()
 		{
 			lock (mutex)
 			{
 				_succeeded = true;
 				_onSuccess.ForEach(x => x(_val));
-				clean();
+				Clean();
 			}
 		}
 
 		/// <summary>
 		/// Once a promise has a value, the callback queues can never again be populated. 
 		/// </summary>
-		private void clean()
+		private void Clean()
 		{
 			// These can never be used again, so we may as well save a bit of memory.
 			_onSuccess = null;
@@ -230,7 +230,7 @@ namespace Promise
 		{
 			Action<Action<PromiseError, Promise<T>>> wrap = cb =>
 			{
-				this.fail(err =>
+				this.Fail(err =>
 				{
 					try
 					{
@@ -246,10 +246,10 @@ namespace Promise
 					}
 				});
 
-				this.success(s => cb(null, new Promise<T>(ncb => ncb(null, s))));
+				this.Success(s => cb(null, new Promise<T>(ncb => ncb(null, s))));
 			};
 
-			return join(new Promise<Promise<T>>(wrap));
+			return Join(new Promise<Promise<T>>(wrap));
 		}
 
 		public Promise<T> recover(Func<PromiseError, T> f)
@@ -282,17 +282,17 @@ namespace Promise
 				Wrapper<T> _this = new Wrapper<T>();
 				Wrapper<S> _that = new Wrapper<S>();
 
-				this.fail(s => cb(s, null));
-				that.fail(s => cb(s, null));
+				this.Fail(s => cb(s, null));
+				that.Fail(s => cb(s, null));
 
-				this.success((T t) =>
+				this.Success((T t) =>
 				{
 					_this.update(t);
 					if (_that.has)
 						cb(null, new Pair<T, S>(_this.val, _that.val));
 				});
 
-				that.success((S s) =>
+				that.Success((S s) =>
 				{
 					_that.update(s);
 					if (_this.has)
@@ -310,8 +310,8 @@ namespace Promise
 		{
 			Action<Action<PromiseError, S>> wrap = cb =>
 			{
-				this.fail((err) => cb(err, default(S)));
-				this.success((val) =>
+				this.Fail((err) => cb(err, default(S)));
+				this.Success((val) =>
 				{
 					try
 					{
@@ -333,7 +333,7 @@ namespace Promise
 		/// </summary>
 		public Promise<S> flatMap<S>(Func<T, Promise<S>> conv)
 		{
-			return join(this.map(conv));
+			return Join(this.map(conv));
 		}
 
 		#endregion
@@ -351,39 +351,36 @@ namespace Promise
 			return new PromiseError(ex);
 		}
 
-		public readonly string message;
-		public readonly Exception ex;
+		public readonly string Message;
+		public readonly Exception Ex;
 
 		public PromiseError(string mesg)
 		{
-			ex = new Exception(mesg);
-			message = mesg;
+			Ex = new Exception(mesg);
+			Message = mesg;
 		}
 
 		public PromiseError(Exception ex)
 		{
-			this.ex = ex;
-			message = ex.Message;
+			this.Ex = ex;
+			Message = ex.Message;
 		}
 
 		public override string ToString()
 		{
-			return message;
+			return Message;
 		}
 	}
 
 	public class Pair<T, S>
 	{
-		protected T _first;
-		protected S _second;
-
-		public T first { get { return _first; } }
-		public S second { get { return _second; } }
+		public T First { get; protected set; }
+		public S Second { get; protected set; }
 
 		public Pair(T t, S s)
 		{
-			_first = t;
-			_second = s;
+			First = t;
+			Second = s;
 		}
 	}
 }
