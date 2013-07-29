@@ -95,7 +95,11 @@ So we see that if the error argument is non null, the promise fails, otherwise i
 License
 =======
 
-Author Info
-===========
+Copyright Taste Filter Inc. All rights reserved.
+
+This software is hereby released publicly under the MIT license, see LICENSE.txt for details. 
+
+Authors
+=======
 
 Thomas Getgood <thomas@tastefilter.com>
