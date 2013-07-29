@@ -254,7 +254,7 @@ namespace Promises
 
 		public Promise<T> Recover(Func<PromiseError, T> f)
 		{
-			return Recover(e => new Promise<T>(cb => cb(null, f(e))));
+			return Recover(error => new Promise<T>(cb => cb(null, f(error))));
 		}
 
 		/// <summary>
@@ -273,7 +273,7 @@ namespace Promises
 		}
 
 		/// <summary>
-		/// Combine two promises of different types into one promise of a pair.
+		/// Combine two promises of different types into one promise of a tuple.
 		/// </summary>
 		public Promise<Tuple<T, S>> Combine<S>(Promise<S> that)
 		{
