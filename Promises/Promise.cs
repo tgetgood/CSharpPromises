@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Promises
 {
@@ -34,28 +35,29 @@ namespace Promises
 		/// Converts a list of promises into a promise of a list.
 		/// </summary>
 		/// <remarks>I can't remember the proper name for this kind of functor... If you do please rename.</remarks>
-		public static Promise<List<T>> Invert<T>(List<Promise<T>> promises, bool dropFailures = false)
+		public static Promise<IList<T>> Invert<T>(IEnumerable<Promise<T>> promises, bool dropFailures = false)
 		{
-			Action<Action<PromiseError, List<T>>> wrap = (cb) =>
+			Action<Action<PromiseError, IList<T>>> wrap = (cb) =>
 			{
+				int promisesCount = promises.Count();
 				object locker = new object();
-				List<T> list = new List<T>();
-				List<PromiseError> failed = new List<PromiseError>();
+				IList<T> list = new List<T>();
+				IList<PromiseError> failed = new List<PromiseError>();
 				Action checkDone = () =>
 				{
 					if (!dropFailures && failed.Count > 0)
 					{
 						cb(failed[0], null);
 					}
-					else if (failed.Count + list.Count == promises.Count)
+					else if (failed.Count + list.Count == promisesCount)
 					{
 						cb(null, list);
 					}
 				};
 
-				promises.ForEach(p =>
+				foreach (var promise in promises)
 				{
-					p.Success(value =>
+					promise.Success(value =>
 					{
 						lock (locker)
 						{
@@ -63,7 +65,7 @@ namespace Promises
 							checkDone();
 						}
 					});
-					p.Fail(error =>
+					promise.Fail(error =>
 					{
 						lock (locker)
 						{
@@ -71,9 +73,9 @@ namespace Promises
 							checkDone();
 						}
 					});
-				});
+				}
 			};
-			return new Promise<List<T>>(wrap);
+			return new Promise<IList<T>>(wrap);
 		}
 	}
 
@@ -86,8 +88,8 @@ namespace Promises
 		protected T _value;
 		protected PromiseError _error;
 		private object mutex = new object();
-		protected List<Action<T>> _onSuccess;
-		protected List<Action<PromiseError>> _onFail;
+		protected IList<Action<T>> _onSuccess;
+		protected IList<Action<PromiseError>> _onFail;
 
 		public Promise(T success)
 		{
@@ -189,7 +191,10 @@ namespace Promises
 			lock (mutex)
 			{
 				_succeeded = false;
-				_onFail.ForEach(x => x(_error));
+				foreach (var callback in _onFail)
+				{
+					callback(_error);
+				}
 				Clean();
 			}
 		}
@@ -203,7 +208,10 @@ namespace Promises
 			lock (mutex)
 			{
 				_succeeded = true;
-				_onSuccess.ForEach(cb => cb(_value));
+				foreach (var callback in _onSuccess)
+				{
+					callback(_value);
+				}
 				Clean();
 			}
 		}
