@@ -1,7 +1,6 @@
 bin/
 obj/
 test-results/
-Properties/
 
 TestResult.xml
 *.userprefs
