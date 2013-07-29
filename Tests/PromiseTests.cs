@@ -28,8 +28,8 @@ namespace Promise
 
 			combo.Success(p =>
 			{
-				Assert.AreEqual(p.First, 5);
-				Assert.AreEqual(p.Second, "some string");
+				Assert.AreEqual(p.Item1, 5);
+				Assert.AreEqual(p.Item2, "some string");
 			});
 
 			combo.Success(s => test = true);

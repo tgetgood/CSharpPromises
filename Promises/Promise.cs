@@ -275,9 +275,9 @@ namespace Promise
 		/// <summary>
 		/// Combine two promises of different types into one promise of a pair.
 		/// </summary>
-		public Promise<Pair<T, S>> Combine<S>(Promise<S> that)
+		public Promise<Tuple<T, S>> Combine<S>(Promise<S> that)
 		{
-			Action<Action<PromiseError, Pair<T, S>>> wrap = (cb) =>
+			Action<Action<PromiseError, Tuple<T, S>>> wrap = (cb) =>
 			{
 				Wrapper<T> _this = new Wrapper<T>();
 				Wrapper<S> _that = new Wrapper<S>();
@@ -289,18 +289,18 @@ namespace Promise
 				{
 					_this.Update(valueT);
 					if (_that.HasValue)
-						cb(null, new Pair<T, S>(_this.Value, _that.Value));
+						cb(null, new Tuple<T, S>(_this.Value, _that.Value));
 				});
 
 				that.Success((S valueS) =>
 				{
 					_that.Update(valueS);
 					if (_this.HasValue)
-						cb(null, new Pair<T, S>(_this.Value, _that.Value));
+						cb(null, new Tuple<T, S>(_this.Value, _that.Value));
 				});
 			};
 
-			return new Promise<Pair<T, S>>(wrap);
+			return new Promise<Tuple<T, S>>(wrap);
 		}
 
 		/// <summary>
@@ -369,18 +369,6 @@ namespace Promise
 		public override string ToString()
 		{
 			return Message;
-		}
-	}
-
-	public class Pair<T, S>
-	{
-		public T First { get; protected set; }
-		public S Second { get; protected set; }
-
-		public Pair(T t, S s)
-		{
-			First = t;
-			Second = s;
 		}
 	}
 }
