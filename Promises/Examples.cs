@@ -1,5 +1,5 @@
 using System;
-using Promise;
+using Promises;
 
 namespace Examples
 {

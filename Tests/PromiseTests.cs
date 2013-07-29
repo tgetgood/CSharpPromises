@@ -1,7 +1,7 @@
 ﻿using System;
 using NUnit.Framework;
 
-namespace Promise
+namespace Promises
 {
 	[TestFixture]
 	public class PromiseTests

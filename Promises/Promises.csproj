@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="Examples.cs" />
     <Compile Include="Promise.cs" />
+    <Compile Include="PromiseError.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
