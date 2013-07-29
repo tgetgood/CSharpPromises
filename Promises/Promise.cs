@@ -1,79 +1,81 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
-namespace Promise
+namespace Promises
 {
 	public abstract class Promise
 	{
 		/// <summary>
 		/// Takes a promise of a promise and returns the promised promise.
 		/// </summary>
-		public static Promise<S> Join<S>(Promise<Promise<S>> upper)
+		public static Promise<T> Join<T>(Promise<Promise<T>> upper)
 		{
-			Action<Action<PromiseError, S>> wrap = cb =>
+			Action<Action<PromiseError, T>> wrap = (cb) =>
 			{
-				upper.Success((Promise<S> lower) =>
+				upper.Success((Promise<T> lower) =>
 				{
-					lower.Success((S t) =>
+					lower.Success((value) =>
 					{
-						cb(null, t);
+						cb(null, value);
 					});
-					lower.Fail(s =>
+					lower.Fail(error =>
 					{
-						cb(s, default(S));
+						cb(error, default(T));
 					});
 				});
-				upper.Fail(s =>
+				upper.Fail(error =>
 				{
-					cb(s, default(S));
+					cb(error, default(T));
 				});
 			};
-			return new Promise<S>(wrap);
+			return new Promise<T>(wrap);
 		}
 		/// <summary>
 		/// Converts a list of promises into a promise of a list.
 		/// </summary>
 		/// <remarks>I can't remember the proper name for this kind of functor... If you do please rename.</remarks>
-		public static Promise<List<S>> Invert<S>(List<Promise<S>> promises, bool dropFailures = false)
+		public static Promise<IList<T>> Invert<T>(IEnumerable<Promise<T>> promises, bool dropFailures = false)
 		{
-			Action<Action<PromiseError, List<S>>> wrap = cb =>
+			Action<Action<PromiseError, IList<T>>> wrap = (cb) =>
 			{
+				int promisesCount = promises.Count();
 				object locker = new object();
-				List<S> list = new List<S>();
-				List<PromiseError> failed = new List<PromiseError>();
+				IList<T> list = new List<T>();
+				IList<PromiseError> failed = new List<PromiseError>();
 				Action checkDone = () =>
 				{
 					if (!dropFailures && failed.Count > 0)
 					{
 						cb(failed[0], null);
 					}
-					else if (failed.Count + list.Count == promises.Count)
+					else if (failed.Count + list.Count == promisesCount)
 					{
 						cb(null, list);
 					}
 				};
 
-				promises.ForEach(p =>
+				foreach (var promise in promises)
 				{
-					p.Success(val =>
+					promise.Success(value =>
 					{
 						lock (locker)
 						{
-							list.Add(val);
+							list.Add(value);
 							checkDone();
 						}
 					});
-					p.Fail(e =>
+					promise.Fail(error =>
 					{
 						lock (locker)
 						{
-							failed.Add(e);
+							failed.Add(error);
 							checkDone();
 						}
 					});
-				});
+				}
 			};
-			return new Promise<List<S>>(wrap);
+			return new Promise<IList<T>>(wrap);
 		}
 	}
 
@@ -83,46 +85,46 @@ namespace Promise
 
 		protected bool _completed = false;
 		protected bool _succeeded = false;
-		protected T _val;
-		protected PromiseError _err;
+		protected T _value;
+		protected PromiseError _error;
 		private object mutex = new object();
-		protected List<Action<T>> _onSuccess;
-		protected List<Action<PromiseError>> _onFail;
+		protected IList<Action<T>> _onSuccess;
+		protected IList<Action<PromiseError>> _onFail;
 
 		public Promise(T success)
 		{
 			_completed = true;
 			_succeeded = true;
-			_val = success;
+			_value = success;
 		}
 
-		public Promise(PromiseError err)
+		public Promise(PromiseError error)
 		{
 			_completed = true;
 			_succeeded = false;
-			_err = err;
+			_error = error;
 		}
 
-		public Promise(Action<Action<PromiseError, T>> cb)
+		public Promise(Action<Action<PromiseError, T>> callback)
 		{
 			_onSuccess = new List<Action<T>>();
 			_onFail = new List<Action<PromiseError>>();
 
 			try
 			{
-				cb(Construct);
+				callback(Construct);
 			}
-			catch (Exception e)
+			catch (Exception ex)
 			{
-				Construct(e, default(T));
+				Construct(ex, default(T));
 			}
 		}
 
 		#region promise wrappers
 
-		public static implicit operator Promise<T>(PromiseError fail)
+		public static implicit operator Promise<T>(PromiseError error)
 		{
-			return new Promise<T>(cb => cb(fail, default(T)));
+			return new Promise<T>(cb => cb(error, default(T)));
 		}
 
 		/// <summary>
@@ -130,56 +132,56 @@ namespace Promise
 		/// </summary>
 		public static implicit operator Promise<object>(Promise<T> promise)
 		{
-			return promise.map(t => t as object);
+			return promise.Map(t => t as object);
 		}
 
 		#endregion
 
 		#region promise logic
 
-		public void Success(Action<T> cb)
+		public void Success(Action<T> callback)
 		{
 			lock (mutex)
 			{
 				if (_completed)
 				{
 					if (_succeeded)
-						cb(_val);
+						callback(_value);
 				}
 				else
-					_onSuccess.Add(cb);
+					_onSuccess.Add(callback);
 			}
 		}
 
-		public void Fail(Action<PromiseError> cb)
+		public void Fail(Action<PromiseError> callback)
 		{
 			lock (mutex)
 			{
 				if (_completed)
 				{
 					if (!_succeeded)
-						cb(_err);
+						callback(_error);
 				}
 				else
-					_onFail.Add(cb);
+					_onFail.Add(callback);
 			}
 		}
 
-		private void Construct(PromiseError err, T val)
+		private void Construct(PromiseError error, T value)
 		{
 			if (_completed)
 				return;
 
 			_completed = true;
 			// Looks a bit too much like Node...
-			if (err != null)
+			if (error != null)
 			{
-				_err = err;
+				_error = error;
 				TriggerFailure();
 			}
 			else
 			{
-				_val = val;
+				_value = value;
 				TriggerSuccess();
 			}
 		}
@@ -189,7 +191,10 @@ namespace Promise
 			lock (mutex)
 			{
 				_succeeded = false;
-				_onFail.ForEach(x => x(_err));
+				foreach (var callback in _onFail)
+				{
+					callback(_error);
+				}
 				Clean();
 			}
 		}
@@ -203,7 +208,10 @@ namespace Promise
 			lock (mutex)
 			{
 				_succeeded = true;
-				_onSuccess.ForEach(x => x(_val));
+				foreach (var callback in _onSuccess)
+				{
+					callback(_value);
+				}
 				Clean();
 			}
 		}
@@ -226,19 +234,19 @@ namespace Promise
 		/// If the promise fails, apply f to the error and try to recover a value.
 		/// If f throws an exception the recovered promise will also fail.
 		/// </summary>
-		public Promise<T> recover(Func<PromiseError, Promise<T>> f)
+		public Promise<T> Recover(Func<PromiseError, Promise<T>> f)
 		{
-			Action<Action<PromiseError, Promise<T>>> wrap = cb =>
+			Action<Action<PromiseError, Promise<T>>> wrap = (cb) =>
 			{
-				this.Fail(err =>
+				this.Fail(error =>
 				{
 					try
 					{
-						Promise<T> rec = f(err);
-						if (rec == null)
-							cb(err, null);
+						Promise<T> recovered = f(error);
+						if (recovered == null)
+							cb(error, null);
 						else
-							cb(null, rec);
+							cb(null, recovered);
 					}
 					catch (Exception ex)
 					{
@@ -246,38 +254,38 @@ namespace Promise
 					}
 				});
 
-				this.Success(s => cb(null, new Promise<T>(ncb => ncb(null, s))));
+				this.Success(value => cb(null, new Promise<T>(ncb => ncb(null, value))));
 			};
 
 			return Join(new Promise<Promise<T>>(wrap));
 		}
 
-		public Promise<T> recover(Func<PromiseError, T> f)
+		public Promise<T> Recover(Func<PromiseError, T> f)
 		{
-			return recover(e => new Promise<T>(cb => cb(null, f(e))));
+			return Recover(error => new Promise<T>(cb => cb(null, f(error))));
 		}
 
 		/// <summary>
-		///  Helper class for combine.
+		///  Helper class for Combine.
 		/// </summary>
 		private class Wrapper<K>
 		{
-			public K val;
-			public bool has = false;
+			public K Value;
+			public bool HasValue = false;
 
-			public void update(K t)
+			public void Update(K value)
 			{
-				val = t;
-				has = true;
+				this.Value = value;
+				this.HasValue = true;
 			}
 		}
 
 		/// <summary>
-		/// Combine two promises of different types into one promise of a pair.
+		/// Combine two promises of different types into one promise of a tuple.
 		/// </summary>
-		public Promise<Pair<T, S>> combine<S>(Promise<S> that)
+		public Promise<Tuple<T, S>> Combine<S>(Promise<S> that)
 		{
-			Action<Action<PromiseError, Pair<T, S>>> wrap = (cb) =>
+			Action<Action<PromiseError, Tuple<T, S>>> wrap = (cb) =>
 			{
 				Wrapper<T> _this = new Wrapper<T>();
 				Wrapper<S> _that = new Wrapper<S>();
@@ -285,38 +293,38 @@ namespace Promise
 				this.Fail(s => cb(s, null));
 				that.Fail(s => cb(s, null));
 
-				this.Success((T t) =>
+				this.Success((T valueT) =>
 				{
-					_this.update(t);
-					if (_that.has)
-						cb(null, new Pair<T, S>(_this.val, _that.val));
+					_this.Update(valueT);
+					if (_that.HasValue)
+						cb(null, new Tuple<T, S>(_this.Value, _that.Value));
 				});
 
-				that.Success((S s) =>
+				that.Success((S valueS) =>
 				{
-					_that.update(s);
-					if (_this.has)
-						cb(null, new Pair<T, S>(_this.val, _that.val));
+					_that.Update(valueS);
+					if (_this.HasValue)
+						cb(null, new Tuple<T, S>(_this.Value, _that.Value));
 				});
 			};
 
-			return new Promise<Pair<T, S>>(wrap);
+			return new Promise<Tuple<T, S>>(wrap);
 		}
 
 		/// <summary>
 		/// Converts a promise of a T into a promise of an S given a function T -> S
 		/// </summary>
-		public Promise<S> map<S>(Func<T, S> convert)
+		public Promise<S> Map<S>(Func<T, S> convert)
 		{
-			Action<Action<PromiseError, S>> wrap = cb =>
+			Action<Action<PromiseError, S>> wrap = (cb) =>
 			{
-				this.Fail((err) => cb(err, default(S)));
-				this.Success((val) =>
+				this.Fail((error) => cb(error, default(S)));
+				this.Success((value) =>
 				{
 					try
 					{
-						S newVal = convert(val);
-						cb(null, newVal);
+						S newValue = convert(value);
+						cb(null, newValue);
 					}
 					catch (Exception e)
 					{
@@ -328,59 +336,14 @@ namespace Promise
 		}
 
 		/// <summary>
-		/// Converts a promise of a T into a promise of an S given a function T -> Promise<S>
+		/// Converts a promise of a T into a promise of an S given a function T -> Promise&lt;S&gt;
 		/// aka bind
 		/// </summary>
-		public Promise<S> flatMap<S>(Func<T, Promise<S>> conv)
+		public Promise<S> FlatMap<S>(Func<T, Promise<S>> convert)
 		{
-			return Join(this.map(conv));
+			return Join(this.Map(convert));
 		}
 
 		#endregion
-	}
-
-	public class PromiseError
-	{
-		public static implicit operator PromiseError(string mesg)
-		{
-			return new PromiseError(mesg);
-		}
-
-		public static implicit operator PromiseError(Exception ex)
-		{
-			return new PromiseError(ex);
-		}
-
-		public readonly string Message;
-		public readonly Exception Ex;
-
-		public PromiseError(string mesg)
-		{
-			Ex = new Exception(mesg);
-			Message = mesg;
-		}
-
-		public PromiseError(Exception ex)
-		{
-			this.Ex = ex;
-			Message = ex.Message;
-		}
-
-		public override string ToString()
-		{
-			return Message;
-		}
-	}
-
-	public class Pair<T, S>
-	{
-		public T First { get; protected set; }
-		public S Second { get; protected set; }
-
-		public Pair(T t, S s)
-		{
-			First = t;
-			Second = s;
-		}
 	}
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using NUnit.Framework;
 
-namespace Promise
+namespace Promises
 {
 	[TestFixture]
 	public class PromiseTests
@@ -22,14 +22,14 @@ namespace Promise
 			Promise<int> p1 = new Promise<int>(cb => cb(null, 5));
 			Promise<string> p2 = new Promise<string>(cb => cb(null, "some string"));
 
-			var combo = p1.combine(p2);
+			var combo = p1.Combine(p2);
 
 			bool test = false;
 
 			combo.Success(p =>
 			{
-				Assert.AreEqual(p.First, 5);
-				Assert.AreEqual(p.Second, "some string");
+				Assert.AreEqual(p.Item1, 5);
+				Assert.AreEqual(p.Item2, "some string");
 			});
 
 			combo.Success(s => test = true);
@@ -41,7 +41,7 @@ namespace Promise
 		public void TestMapPromise()
 		{
 			Promise<int> p1 = new Promise<int>(cb => cb(null, 5));
-			Promise<string> p2 = p1.map(x => x.ToString());
+			Promise<string> p2 = p1.Map(x => x.ToString());
 
 			p2.Success(s => Assert.AreEqual(s, "5"));
 
@@ -75,7 +75,7 @@ namespace Promise
 		public void TestFlatMap()
 		{
 			Promise<int> p1 = new Promise<int>(cb => cb(null, 5));
-			Promise<string> p2 = p1.flatMap(i => new Promise<string>(cb => cb(null, i.ToString())));
+			Promise<string> p2 = p1.FlatMap(i => new Promise<string>(cb => cb(null, i.ToString())));
 
 			p2.Success(s => Assert.AreEqual(s, "5"));
 
@@ -91,7 +91,7 @@ namespace Promise
 		{
 			Promise<string> suf = new Promise<string>(cb => cb(null, "second"));
 
-			Promise<string> full = suf.flatMap(x => convert("first", x));
+			Promise<string> full = suf.FlatMap(x => convert("first", x));
 
 			full.Success(x => Assert.AreEqual(x, "first, second"));
 
@@ -122,7 +122,7 @@ namespace Promise
 
 			Assert.IsTrue(test);
 
-			var p2 = p.flatMap(l => new Promise<int>(cb => cb(null, 3)));
+			var p2 = p.FlatMap(l => new Promise<int>(cb => cb(null, 3)));
 
 			test = false;
 
