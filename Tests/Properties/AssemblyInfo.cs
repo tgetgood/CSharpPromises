@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Promises")]
-[assembly: AssemblyDescription("Promises")]
+[assembly: AssemblyTitle("Promises Test Project")]
+[assembly: AssemblyDescription("Promises Test Project")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Taste Filter Inc.")]
-[assembly: AssemblyProduct("Promises")]
+[assembly: AssemblyProduct("Tests")]
 [assembly: AssemblyCopyright("Copyright Taste Filter Inc. (2013). All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("a58bb577-4a39-41fa-aae0-28b2941a7889")]
+[assembly: Guid("45aec366-6664-495d-9cde-5a086892a8b7")]
 
 // Version information for an assembly consists of the following four values:
 //
